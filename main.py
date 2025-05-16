@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class CurrencyAnalyzerApp:
     def __init__(self, root):
@@ -11,8 +12,11 @@ class CurrencyAnalyzerApp:
         self.label = tk.Label(root, text="Загрузите Excel-файл с курсами валют")
         self.label.pack(pady=10)
 
-        self.button = tk.Button(root, text="Открыть файл", command=self.load_file)
-        self.button.pack(pady=5)
+        self.load_button = tk.Button(root, text="Открыть файл", command=self.load_file)
+        self.load_button.pack(pady=5)
+
+        self.plot_button = tk.Button(root, text="Построить график", command=self.plot_graph)
+        self.plot_button.pack(pady=5)
 
         self.text = tk.Text(root, height=30, width=100)
         self.text.pack(padx=10, pady=10)
@@ -34,6 +38,28 @@ class CurrencyAnalyzerApp:
             self.label.config(text="Файл загружен успешно!")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось загрузить файл:\n{e}")
+
+    def plot_graph(self):
+        if self.df is None:
+            messagebox.showwarning("Нет данных", "Сначала загрузите Excel-файл.")
+            return
+
+        try:
+            df = self.df.copy()
+            df['Дата'] = pd.to_datetime(df['Дата'])
+
+            plt.figure(figsize=(10, 5))
+            plt.plot(df['Дата'], df['USD'], label='USD', marker='o')
+            plt.plot(df['Дата'], df['EUR'], label='EUR', marker='x')
+            plt.xlabel("Дата")
+            plt.ylabel("Курс рубля")
+            plt.title("Курс рубля к USD и EUR")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.show()
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось построить график:\n{e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
