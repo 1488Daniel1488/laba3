@@ -117,7 +117,14 @@ class CurrencyAnalyzerApp:
             return
 
         try:
-            N = int(self.forecast_entry.get())
+            n_str = self.forecast_entry.get()
+            if not n_str.strip().isdigit():
+                raise ValueError("Введите положительное целое число.")
+
+            N = int(n_str)
+            if N < 2 or N >= len(self.df):
+                raise ValueError(f"Число должно быть от 2 до {len(self.df) - 1}")
+
             df = self.df.copy()
             df['Дата'] = pd.to_datetime(df['Дата'])
 
@@ -153,6 +160,8 @@ class CurrencyAnalyzerApp:
             self.forecast_output.delete(1.0, tk.END)
             self.forecast_output.insert(tk.END, result)
 
+        except ValueError as ve:
+            messagebox.showerror("Ошибка ввода", str(ve))
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось построить прогноз:\n{e}")
 
