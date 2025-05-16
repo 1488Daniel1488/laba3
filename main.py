@@ -7,7 +7,7 @@ class CurrencyAnalyzerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Анализ курса рубля")
-        self.root.geometry("800x600")
+        self.root.geometry("800x700")
 
         self.label = tk.Label(root, text="Загрузите Excel-файл с курсами валют")
         self.label.pack(pady=10)
@@ -18,8 +18,14 @@ class CurrencyAnalyzerApp:
         self.plot_button = tk.Button(root, text="Построить график", command=self.plot_graph)
         self.plot_button.pack(pady=5)
 
-        self.text = tk.Text(root, height=30, width=100)
+        self.analyze_button = tk.Button(root, text="Анализ курса", command=self.analyze_rates)
+        self.analyze_button.pack(pady=5)
+
+        self.text = tk.Text(root, height=20, width=100)
         self.text.pack(padx=10, pady=10)
+
+        self.analysis_output = tk.Text(root, height=10, width=100, bg="#f0f0f0")
+        self.analysis_output.pack(padx=10, pady=10)
 
         self.df = None
 
@@ -60,6 +66,41 @@ class CurrencyAnalyzerApp:
             plt.show()
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось построить график:\n{e}")
+
+    def analyze_rates(self):
+        if self.df is None:
+            messagebox.showwarning("Нет данных", "Сначала загрузите Excel-файл.")
+            return
+
+        try:
+            df = self.df.copy()
+            df['Дата'] = pd.to_datetime(df['Дата'])
+
+            df['USD_diff'] = df['USD'].diff()
+            df['EUR_diff'] = df['EUR'].diff()
+
+            usd_max_drop = df['USD_diff'].idxmax()
+            usd_max_rise = df['USD_diff'].idxmin()
+
+            eur_max_drop = df['EUR_diff'].idxmax()
+            eur_max_rise = df['EUR_diff'].idxmin()
+
+            result = f"""📊 Анализ изменений курса рубля:
+
+💵 USD:
+- 📉 Максимальное укрепление рубля (падение USD): {abs(df.loc[usd_max_rise, 'USD_diff']):.2f} руб. ({df.loc[usd_max_rise, 'Дата'].date()})
+- 📈 Максимальное ослабление рубля (рост USD): {abs(df.loc[usd_max_drop, 'USD_diff']):.2f} руб. ({df.loc[usd_max_drop, 'Дата'].date()})
+
+💶 EUR:
+- 📉 Максимальное укрепление рубля (падение EUR): {abs(df.loc[eur_max_rise, 'EUR_diff']):.2f} руб. ({df.loc[eur_max_rise, 'Дата'].date()})
+- 📈 Максимальное ослабление рубля (рост EUR): {abs(df.loc[eur_max_drop, 'EUR_diff']):.2f} руб. ({df.loc[eur_max_drop, 'Дата'].date()})
+"""
+
+            self.analysis_output.delete(1.0, tk.END)
+            self.analysis_output.insert(tk.END, result)
+
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось выполнить анализ:\n{e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
