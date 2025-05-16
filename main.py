@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class TemperatureApp:
     def __init__(self, root):
@@ -14,9 +16,10 @@ class TemperatureApp:
             self.table.heading(col, text=col)
         self.table.pack(pady=10)
         # Загрузка данных
+        self.data = None
         self.load_data()
-        # Placeholder для графиков
-        tk.Label(root, text="Место для графиков").pack(pady=10)
+        # Графики
+        self.plot_graphs()
 
     def load_data(self):
         try:
@@ -27,6 +30,21 @@ class TemperatureApp:
                 ))
         except FileNotFoundError:
             tk.Label(self.root, text="Файл temperature.csv отсутствует").pack()
+
+    def plot_graphs(self):
+        if self.data is not None:
+            fig, ax = plt.subplots(figsize=(6, 4))
+            ax.plot(self.data["Day"], self.data["MaxTemp"], color="red", label="Макс. темп.")
+            ax.plot(self.data["Day"], self.data["MinTemp"], color="blue", label="Мин. темп.")
+            ax.set_xlabel("День")
+            ax.set_ylabel("Температура (°C)")
+            ax.legend()
+            ax.grid(True)
+            canvas = FigureCanvasTkAgg(fig, master=self.root)
+            canvas.draw()
+            canvas.get_tk_widget().pack(pady=10)
+        else:
+            tk.Label(self.root, text="Данные отсутствуют для графиков").pack()
 
 if __name__ == "__main__":
     root = tk.Tk()
