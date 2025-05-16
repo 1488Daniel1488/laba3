@@ -19,9 +19,16 @@ class TemperatureApp:
         self.data = None
         self.load_data()
         # Графики
+        self.fig, self.ax = None, None
+        self.canvas = None
         self.plot_graphs()
         # Перепады температур
         self.calculate_differences()
+        # Прогноз
+        tk.Label(root, text="Введите число дней для прогноза (N):").pack()
+        self.n_entry = tk.Entry(root)
+        self.n_entry.pack()
+        tk.Button(root, text="Прогнозировать", command=self.forecast_temps).pack(pady=5)
 
     def load_data(self):
         try:
@@ -35,16 +42,16 @@ class TemperatureApp:
 
     def plot_graphs(self):
         if self.data is not None:
-            fig, ax = plt.subplots(figsize=(6, 4))
-            ax.plot(self.data["Day"], self.data["MaxTemp"], color="red", label="Макс. темп.")
-            ax.plot(self.data["Day"], self.data["MinTemp"], color="blue", label="Мин. темп.")
-            ax.set_xlabel("День")
-            ax.set_ylabel("Температура (°C)")
-            ax.legend()
-            ax.grid(True)
-            canvas = FigureCanvasTkAgg(fig, master=self.root)
-            canvas.draw()
-            canvas.get_tk_widget().pack(pady=10)
+            self.fig, self.ax = plt.subplots(figsize=(6, 4))
+            self.ax.plot(self.data["Day"], self.data["MaxTemp"], color="red", label="Макс. темп.")
+            self.ax.plot(self.data["Day"], self.data["MinTemp"], color="blue", label="Мин. темп.")
+            self.ax.set_xlabel("День")
+            self.ax.set_ylabel("Температура (°C)")
+            self.ax.legend()
+            self.ax.grid(True)
+            self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
+            self.canvas.draw()
+            self.canvas.get_tk_widget().pack(pady=10)
         else:
             tk.Label(self.root, text="Данные отсутствуют для графиков").pack()
 
@@ -57,6 +64,33 @@ class TemperatureApp:
             tk.Label(self.root, text=f"Наименьший перепад в день {min_diff_day}: {self.data['TempDiff'].min()}°C").pack()
         else:
             tk.Label(self.root, text="Данные отсутствуют для расчёта перепадов").pack()
+
+    def forecast_temps(self):
+        if self.data is not None and self.canvas:
+            try:
+                n = int(self.n_entry.get())
+                if n < 1:
+                    raise ValueError("N должно быть положительным")
+                # Скользящая средняя
+                max_forecast = self.moving_average(self.data["MaxTemp"].tolist(), n, 5)
+                min_forecast = self.moving_average(self.data["MinTemp"].tolist(), n, 5)
+                forecast_days = list(range(self.data["Day"].max() + 1, self.data["Day"].max() + 6))
+                # Обновление графика
+                self.ax.plot(forecast_days, max_forecast[-5:], color="red", linestyle="--", label="Прогноз макс.")
+                self.ax.plot(forecast_days, min_forecast[-5:], color="blue", linestyle="--", label="Прогноз мин.")
+                self.ax.legend()
+                self.canvas.draw()
+            except ValueError as e:
+                tk.Label(self.root, text=f"Ошибка: {e}").pack()
+        else:
+            tk.Label(self.root, text="Данные отсутствуют для прогноза").pack()
+
+    @staticmethod
+    def moving_average(data, n, periods):
+        result = data.copy()
+        for _ in range(periods):
+            result.append(sum(result[-n:]) / n)
+        return result
 
 if __name__ == "__main__":
     root = tk.Tk()
