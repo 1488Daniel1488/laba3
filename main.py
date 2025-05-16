@@ -7,7 +7,7 @@ class CurrencyAnalyzerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Анализ курса рубля")
-        self.root.geometry("800x800")
+        self.root.geometry("800x900")
 
         self.label = tk.Label(root, text="Загрузите Excel-файл с курсами валют")
         self.label.pack(pady=10)
@@ -35,6 +35,9 @@ class CurrencyAnalyzerApp:
 
         self.analysis_output = tk.Text(root, height=10, width=100, bg="#f0f0f0")
         self.analysis_output.pack(padx=10, pady=10)
+
+        self.forecast_output = tk.Text(root, height=10, width=100, bg="#e8f5e9")
+        self.forecast_output.pack(padx=10, pady=10)
 
         self.df = None
 
@@ -124,15 +127,14 @@ class CurrencyAnalyzerApp:
             last_date = df['Дата'].iloc[-1]
             forecast_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=N)
 
-            usd_pred = [usd_forecast.iloc[-1]] * N
-            eur_pred = [eur_forecast.iloc[-1]] * N
+            usd_pred = [round(usd_forecast.iloc[-1], 2)] * N
+            eur_pred = [round(eur_forecast.iloc[-1], 2)] * N
 
             plt.figure(figsize=(10, 5))
             plt.plot(df['Дата'], df['USD'], label='USD', marker='o')
             plt.plot(df['Дата'], df['EUR'], label='EUR', marker='x')
-            plt.plot(forecast_dates, usd_pred, label='USD прогноз', linestyle='--')
-            plt.plot(forecast_dates, eur_pred, label='EUR прогноз', linestyle='--')
-
+            plt.plot(forecast_dates, usd_pred, label='USD прогноз', linestyle='--', marker='o', color='green')
+            plt.plot(forecast_dates, eur_pred, label='EUR прогноз', linestyle='--', marker='x', color='red')
             plt.xlabel("Дата")
             plt.ylabel("Курс рубля")
             plt.title("Курс рубля с прогнозом")
@@ -140,6 +142,16 @@ class CurrencyAnalyzerApp:
             plt.grid(True)
             plt.tight_layout()
             plt.show()
+
+            result = f"📅 Прогноз курса на {N} дней (скользящее среднее):\n\nUSD:\n"
+            for date in forecast_dates:
+                result += f"{date.date()}: {usd_pred[0]}\n"
+            result += "\nEUR:\n"
+            for date in forecast_dates:
+                result += f"{date.date()}: {eur_pred[0]}\n"
+
+            self.forecast_output.delete(1.0, tk.END)
+            self.forecast_output.insert(tk.END, result)
 
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось построить прогноз:\n{e}")
