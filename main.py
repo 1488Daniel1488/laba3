@@ -92,6 +92,22 @@ class TemperatureApp:
             result.append(sum(result[-n:]) / n)
         return result
 
+    def forecast_temps(self):
+        if self.data is not None and self.canvas:
+            try:
+                n = int(self.n_entry.get())
+                if n < 1:
+                    raise ValueError("N должно быть положительным")
+                max_forecast = self.moving_average(self.data["MaxTemp"].tolist(), n, 5)
+                min_forecast = self.moving_average(self.data["MinTemp"].tolist(), n, 5)
+                forecast_days = list(range(self.data["Day"].max() + 1, self.data["Day"].max() + 6))
+                self.ax.plot(forecast_days, max_forecast[-5:], color="red", linestyle="--", label="Прогноз макс.")
+                self.ax.plot(forecast_days, min_forecast[-5:], color="blue", linestyle="--", label="Прогноз мин.")
+                self.ax.legend()
+                self.canvas.draw()
+            except ValueError as e:
+                tk.Label(self.root, text=f"Ошибка: {e}").pack()
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = TemperatureApp(root)
